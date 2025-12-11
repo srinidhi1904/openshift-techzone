@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gw-elasticsearch
+spec:
+  selector:
+    matchLabels:
+      app: gw-elasticsearch
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gw-elasticsearch
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: gw-elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+        resources:
+          limits:
+            memory: "2Gi"
+        env:
+        - name: xpack.security.enabled
+          value: "false"
+        - name: discovery.type
+          value: "single-node"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apigw-es-service
+spec:
+  selector:
+    app: gw-elasticsearch
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9200
+      targetPort: 9200
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gw-kibana
+spec:
+  selector:
+    matchLabels:
+      app: gw-kibana
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gw-kibana
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: gw-kibana
+        image: docker.elastic.co/kibana/kibana:8.12.2
+        resources:
+          limits:
+            memory: "1Gi"
+        ports:
+        - containerPort: 5601
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://apigw-es-service.demo-project.svc.cluster.local:9200"
+        - name: SERVER_BASEPATH
+          value: "/apigatewayui/dashboardproxy"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apigw-kb-service
+spec:
+  selector:
+    app: gw-kibana
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5601
+      targetPort: 5601
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apigw
+spec:
+  selector:
+    matchLabels:
+      app: apigw
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: apigw
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: apigw
+        image: cp.icr.io/cp/webmethods/api/api-gateway:11.1
+        resources:
+          limits:
+            memory: "2Gi"
+        ports:
+        - containerPort: 5555
+        - containerPort: 5543
+        - containerPort: 9072
+        env:
+        - name: apigw_elasticsearch_hosts
+          value: "apigw-es-service.demo-project.svc.cluster.local:9200"
+        - name: apigw_kibana_dashboardInstance
+          value: "http://apigw-kb-service.demo-project.svc.cluster.local:5601"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apigw-service
+spec:
+  selector:
+    app: apigw
+  ports:
+    - name: http
+      protocol: TCP
+      port: 15555
+      targetPort: 5555
+    - name: gwport
+      protocol: TCP
+      port: 9072
+      targetPort: 9072
+    - name: https
+      protocol: TCP
+      port: 5543
+      targetPort: 5543
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: apigw-admin-route
+spec:
+  path: /
+  to:
+    kind: Service
+    name: apigw-service
+  port:
+    targetPort: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: apigw-soln-route
+spec:
+  path: /
+  to:
+    kind: Service
+    name: apigw-service
+  port:
+    targetPort: gwport
