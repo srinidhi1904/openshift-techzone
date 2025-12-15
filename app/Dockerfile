@@ -1,7 +1,7 @@
 FROM ibmwebmethods.azurecr.io/webmethods-microservicesruntime:11.1
-ARG WPM_TOKEN
+#ARG WPM_TOKEN
 
-RUN /opt/softwareag/wpm/bin/wpm.sh -d /opt/softwareag/IntegrationServer/ install -wr licensed -j ${WPM_TOKEN} -ws https://packages.webmethods.io WmJDBCAdapter:v10.3.2.21
+RUN /opt/softwareag/wpm/bin/wpm.sh -d /opt/softwareag/IntegrationServer/ install -wr licensed -j "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzYWctY2lhbSIsImF1ZCI6WyJwYWNrYWdlLW1hbmFnZXIiXSwiaXNzIjoiU29mdHdhcmVBRyIsIm51bURheXMiOjYwLCJpZCI6InNyaW5pZGhpLnJhbWFjaGFuZHJhQGlibS5jb20iLCJsYWJlbCI6IlNyaVRva2VuRGVjIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImV4cCI6MTc3MDcxMDUyNH0.Ppg838NSTvHU7jWEu9PSNAelg3mPqqFnKTm9iWQbhRyu-ZX0qf-KypUe4PoR5fxwgo6Qax104JIxEiuXzlOkq-jmr817o7NYfPp8CGft_JE9o5dE9WuMhT6UCBeur9ClOU7v_dRuKV8KZRiRO702xGGxendo03WvVqhqDwonqh7tdtMDejyMP3tSaqs_8LGAlPevcU3-nBw3B4QcoYkTJmIgMJHeT1Kti2Bbo7Uue8ab1KpzlMRhlVcm6dLswdTp5Qp5oLos-RYB0gFnXyCFG8EOz8XXMeo71BOM8hGFD8iTqtuJkJeUkLy5sM3tgaXLMX41KgjHCV9aWXfzKuu3qA" -ws https://packages.webmethods.io WmJDBCAdapter:v10.3.2.21
 
 WORKDIR /opt/softwareag/IntegrationServer/packages/WmJDBCAdapter/code/jars/
 COPY mssql-jdbc-12.2.0.jre11.jar .
